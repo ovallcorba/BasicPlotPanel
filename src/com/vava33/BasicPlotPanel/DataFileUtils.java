@@ -11,18 +11,18 @@ package com.vava33.BasicPlotPanel;
 import java.io.File;
 import java.util.Scanner;
 
+import com.vava33.BasicPlotPanel.core.SerieType;
 import com.vava33.jutils.FileUtils;
-import com.vava33.ovPlot.SerieType;
 
 
 public final class DataFileUtils {
 
-    public static BasicSerie readDAT(File datFile) { 
+    public static BasicSerie<BasicPoint> readDAT(File datFile) { 
         boolean firstLine = true;
         boolean readed = true;
         
         //creem un DataSerie_Pattern
-        BasicSerie dsP = new BasicSerie(datFile.getName(),SerieType.dat);
+        BasicSerie<BasicPoint> dsP = new BasicSerie<BasicPoint>(datFile.getName(),SerieType.dat);
         
         //FIRST CHECK ENCODING
         String enc = FileUtils.getEncodingToUse(datFile);
