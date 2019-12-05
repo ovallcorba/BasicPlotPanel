@@ -17,11 +17,12 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import com.vava33.BasicPlotPanel.BasicPlotPanelFrontEnd;
+import com.vava33.BasicPlotPanel.BasicPoint;
 import com.vava33.BasicPlotPanel.BasicSerie;
+import com.vava33.BasicPlotPanel.core.Plottable;
+import com.vava33.BasicPlotPanel.core.SerieType;
 import com.vava33.jutils.VavaLogger;
-import com.vava33.ovPlot.BasicPlotPanel;
-import com.vava33.ovPlot.Plottable;
-import com.vava33.ovPlot.SerieType;
 
 import net.miginfocom.swing.MigLayout;
 import javax.swing.JLabel;
@@ -34,12 +35,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
-public class BatchEditDialog extends JDialog {
+public class BatchEditDialog<T extends BasicSerie<BasicPoint>> extends JDialog {
 
     private static final long serialVersionUID = 1L;
     private final JPanel contentPanel = new JPanel();
-    VavaLogger log = BasicPlotPanel.getLog();
-    List<Plottable> seriesToEdit;
+    VavaLogger log = BasicPlotPanelFrontEnd.getLog();
+    List<T> seriesToEdit;  //POSO PLOTTABLE PER FER-HO GENERAL I PODER EDITAR SUBCLASSES DE BASICSERIE... pero si es vol editar ALTRES valors de les taules cal fer-ho especific
     private JTextField txtMarker;
     private JTextField txtLine;
     private JTextField txtName;
@@ -57,7 +58,8 @@ public class BatchEditDialog extends JDialog {
     private JTextField txtYoff;
     private JCheckBox chckbxApplyToAllYoff;
 
-    public BatchEditDialog(List<Plottable> plts) {
+
+    public BatchEditDialog(List<T> plts) {
         setTitle("Edit serie(s)");
         this.seriesToEdit=plts;
         setBounds(100, 100, 450, 300);
@@ -225,7 +227,7 @@ public class BatchEditDialog extends JDialog {
     }
     
     protected void do_okButton_actionPerformed(ActionEvent e) {
-        for (Plottable p:seriesToEdit) {
+        for (Plottable<BasicPoint> p:seriesToEdit) {
             if (chckbxApplyToAllColor.isSelected()) {
                 p.setColor(lblColor_1.getBackground());
             }
