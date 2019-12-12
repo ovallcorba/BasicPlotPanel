@@ -31,33 +31,39 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
+import com.vava33.BasicPlotPanel.core.DataToPlot;
+import com.vava33.BasicPlotPanel.core.Plot1DGlobal;
+import com.vava33.BasicPlotPanel.core.Plot1DPanel;
+import com.vava33.BasicPlotPanel.core.Plottable;
+import com.vava33.BasicPlotPanel.core.SerieType;
 import com.vava33.BasicPlotPanel.table.BasicPatternsTableCellRenderer;
 import com.vava33.BasicPlotPanel.table.BasicPatternsTableModel;
 import com.vava33.BasicPlotPanel.table.BatchEditDialog;
 import com.vava33.BasicPlotPanel.table.ColorEditor;
 import com.vava33.BasicPlotPanel.table.ColorRenderer;
 import com.vava33.jutils.FileUtils;
-import com.vava33.ovPlot.DataToPlot;
-import com.vava33.ovPlot.Plot1DPanel;
-import com.vava33.ovPlot.PlotPanelGlobal;
-import com.vava33.ovPlot.Plottable;
-import com.vava33.ovPlot.SerieType;
+import com.vava33.jutils.VavaLogger;
 
-public class XYData implements DataToPlot{
 
-    List<BasicSerie> series;
-    private List<Plottable> selectedSeries;
-    int nColoredSeries;
-    private JTable pltTable;
-    private Plot1DPanel plotpanel;
+public class BasicDataToPlot<T extends BasicSerie<BasicPoint>> implements DataToPlot<T>{
+
+    protected List<T> series;
+    protected List<T> selectedSeries;
+    protected int nColoredSeries;
+    protected JTable pltTable;
+    protected Plot1DPanel<?> plotpanel;
+    private static final String className = "BasicDataToPlot";
+    private static VavaLogger log = Plot1DGlobal.getVavaLogger(className);
+    public static void setVavaLogger(VavaLogger l) {log = l;}
+    public static VavaLogger getLog() {return log;}
     
-    public XYData() {
-        series = new ArrayList<BasicSerie>();
-        selectedSeries = new ArrayList<Plottable>();
+    public BasicDataToPlot() {
+        series = new ArrayList<T>();
+        selectedSeries = new ArrayList<T>();
         initTablePatterns(new BasicPatternsTableModel());
         nColoredSeries=0;
     }
-
+    
     public void initTablePatterns(TableModel dm) {
         pltTable = new JTable(dm);
 
@@ -72,7 +78,6 @@ public class XYData implements DataToPlot{
 
         pltTable.getModel().addTableModelListener(new TableModelListener(){
             public void tableChanged(TableModelEvent e) {
-                //nomes fem algo en updatem, per evitar crides inutils aplicar modfiicacio (nomes quan es fa un setValueAt)
                 switch (e.getType()) {
                 case TableModelEvent.UPDATE:
                     applicarModificacioTaula(e.getColumn(),e.getFirstRow(),e.getLastRow());
@@ -117,11 +122,9 @@ public class XYData implements DataToPlot{
             }
             pltTable.getColumn(BasicPatternsTableModel.columns.Type.toString()).setCellEditor(new DefaultCellEditor(comboStypeTable));           
         }catch(IllegalArgumentException ex) {
-            System.out.println("Type column is not shown");
+            log.debug("Type column is not shown");
         }
 
-       
-        
         final JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem editValues = new JMenuItem("Edit Selected Values");
         editValues.addActionListener(new ActionListener() {
@@ -179,38 +182,42 @@ public class XYData implements DataToPlot{
         }
     }
     
-    public void addSerie(BasicSerie ser) {
+    public T getSerie(int i) {
+        return series.get(i);
+    }
+    
+    public void addSerie(T ser) {
         this.addSerie(ser, -1,true, true);
     }
     
-    public void addSerie(BasicSerie ser, boolean updatePlot, boolean paintIt) {
+    public void addSerie(T ser, boolean updatePlot, boolean paintIt) {
         this.addSerie(ser, -1,updatePlot, paintIt);
     }
     
-    public void addSerie(BasicSerie ser, int position, boolean updatePlot, boolean paintIt) {
+    public void addSerie(T ser, int position, boolean updatePlot, boolean paintIt) {
         if (paintIt)this.paintIt(nColoredSeries,ser);
         if (position<0) {
             this.series.add(ser);
-            
+            this.addToTable(ser);
         }else {
             this.series.add(position,ser);
+            this.addToTable(ser,position);
         }
-        this.addToTable(ser);
         if (this.series.size()==1)plotpanel.fitGraph();
-        if (SerieType.isPaintedType(ser.getSerieType()))nColoredSeries++;
+        if (BasicSerie.isPaintedType(ser.getSerieType()))nColoredSeries++;
         if (updatePlot)plotpanel.actualitzaPlot();
     }
     
-    public void removeSerie(BasicSerie ser, boolean updatePlot) {
+    public void removeSerie(T ser, boolean updatePlot) {
         this.series.remove(ser);
         this.removeFromTable(ser);
-        if (SerieType.isPaintedType(ser.getSerieType()))nColoredSeries--;
+        if (BasicSerie.isPaintedType(ser.getSerieType()))nColoredSeries--;
         if (updatePlot)plotpanel.actualitzaPlot();
     }
     
-    public void removeSeries(List<BasicSerie> p) {
-        for (BasicSerie p1:p) {
-          if (SerieType.isPaintedType(p1.getSerieType()))nColoredSeries--;
+    public void removeSeries(List<T> p) {
+        for (T p1:p) {
+          if (BasicSerie.isPaintedType(p1.getSerieType()))nColoredSeries--;
         }
         this.series.removeAll(p);
         this.updateFullTable();
@@ -232,15 +239,19 @@ public class XYData implements DataToPlot{
         return pltTable;
     }
     
-    private Object[] createRow(BasicSerie p) {
-        return new Object[] {p.getName(),p.getColor(),p.isPlotThis(),p.getLineWidth(),p.getMarkerSize(), p.getYOffset(), p.getSerieType().name()};
+    private Object[] createRow(T p) {
+        return new Object[] {p.getName().trim(),p.getColor(),p.isPlotThis(),p.getLineWidth(),p.getMarkerSize(), p.getYOffset(), p.getSerieType().name()};
     }
-    private void addToTable(BasicSerie p) {
+    private void addToTable(T p) {
         BasicPatternsTableModel model = (BasicPatternsTableModel) pltTable.getModel();
         model.addRow(createRow(p));
     }
+    private void addToTable(T p, int row) {
+        BasicPatternsTableModel model = (BasicPatternsTableModel) pltTable.getModel();
+        model.insertRow(row,createRow(p));
+    }
 
-    private void removeFromTable(BasicSerie p) {
+    private void removeFromTable(T p) {
         BasicPatternsTableModel model = (BasicPatternsTableModel) pltTable.getModel();
         int i = this.getPlottables().indexOf(p);
         if (i>=0) {
@@ -263,7 +274,7 @@ public class XYData implements DataToPlot{
 
         for (int i=filaIni; i<=filaFin;i++){
            
-            Plottable selPatt = this.getPlottables().get(i);
+            Plottable<BasicPoint> selPatt = this.getPlottables().get(i);
             BasicPatternsTableModel.columns colName = FileUtils.searchEnum(BasicPatternsTableModel.columns.class,pltTable.getColumnName(columna));
             
             switch(colName){ 
@@ -325,10 +336,11 @@ public class XYData implements DataToPlot{
     private void moveUpSerieTable(ActionEvent e) {
         if (!areSelectedPlottables())return;
         
-        for (Plottable p:selectedSeries) {
+        for (Plottable<BasicPoint> p:selectedSeries) {
             int indx = this.getPlottables().indexOf(p);
             if (indx<=0)continue;
             Collections.swap(this.getPlottables(), indx, indx-1);
+//            this.moveRow(indx, indx-1);
         }
         
         this.updateFullTable();//TODO idealment nomes moure una fila amb moveRow pero feia el tonto...
@@ -338,7 +350,7 @@ public class XYData implements DataToPlot{
 
     private void editMultipleSeriesTable(ActionEvent e) {
         if (selectedSeries.size()>0) {
-            BatchEditDialog be = new BatchEditDialog(selectedSeries);
+            BatchEditDialog<T> be = new BatchEditDialog<T>(selectedSeries);
             be.setModal(true);
             be.setVisible(true);         
             
@@ -365,26 +377,9 @@ public class XYData implements DataToPlot{
         }        
     }
 
-    //from the plottable we retrieve the serie
-    private BasicSerie getSerie(Plottable p) {
-        for (BasicSerie bs:series) {
-            if (bs.getPoints()==p.getPoints())return bs;
-        }
-        return null;
-    }
-    
-    private List<BasicSerie> getSelectedPlottablesAsBasicSeries() {
-        List<BasicSerie> selected = new ArrayList<BasicSerie>();
-        for (Plottable p:selectedSeries) {
-            BasicSerie bs = this.getSerie(p);
-            if (bs!=null)selected.add(bs);
-        }
-        return selected;
-    }
-    
     private void contextRemove(ActionEvent e) {
         if (!areSelectedPlottables())return;
-        this.removeSeries(getSelectedPlottablesAsBasicSeries());
+        this.removeSeries(selectedSeries);
         plotpanel.actualitzaPlot();
     }
 
@@ -491,12 +486,12 @@ public class XYData implements DataToPlot{
 ///IMPLEMENTATIONS
     
     @Override
-    public List<? extends Plottable> getPlottables() {
+    public List<T> getPlottables() {
         return series;
     }
 
     @Override
-    public List<? extends Plottable> getSelectedPlottables() {
+    public List<T> getSelectedPlottables() {
         return selectedSeries;
     }
 
@@ -516,31 +511,31 @@ public class XYData implements DataToPlot{
     public void updateFullTable() { //TODO aquest no se si cal...
         BasicPatternsTableModel model = (BasicPatternsTableModel) pltTable.getModel();
         model.setRowCount(0);
-        for (BasicSerie p:series) {
+        for (T p:series) {
             this.addToTable(p);
         }
 
     }
 
     @Override
-    public <T extends Plot1DPanel> void setPlotPanel(T ppanel) {
+    public <T1 extends Plot1DPanel<?>> void setPlotPanel(T1 ppanel) {
         this.plotpanel=ppanel;
         
     }
     
     public void reAssignColorToAllDataSeries() { //null for all
-        reAssignColorDataSeries(false,SerieType.values());
+        reAssignColorPlottables(false,SerieType.values());
     }
 
     public void reAssignColorToAllPaintedTypes() {
-        reAssignColorDataSeries(false,SerieType.getPaintedTypes().toArray(new SerieType[0]));
+        reAssignColorPlottables(false,BasicSerie.getPaintedTypes().toArray(new SerieType[0]));
 
     }
 
     @Override
-    public void reAssignColorDataSeries(boolean onlyPlotted, SerieType... st) {
+    public void reAssignColorPlottables(boolean onlyPlotted, SerieType... st) {
         int nserie = 0;
-        for (BasicSerie ds: series) {
+        for (T ds: series) {
             //nomes visibles
             if ((onlyPlotted)&&(!ds.isPlotThis()))continue;
             for (SerieType st1 :st) {
@@ -556,13 +551,38 @@ public class XYData implements DataToPlot{
         
     }
     
-    private void paintIt(int nserie, BasicSerie ds) {
+    private void paintIt(int nserie, T ds) {
         if (plotpanel.isLightTheme()){
-            int ncol = (nserie)%PlotPanelGlobal.lightColors.length;
-            ds.setColor(FileUtils.parseColorName(PlotPanelGlobal.lightColors[ncol]));    
+            int ncol = (nserie)%Plot1DGlobal.lightColors.length;
+            ds.setColor(FileUtils.parseColorName(Plot1DGlobal.lightColors[ncol]));    
         }else {
-            int ncol = (nserie)%PlotPanelGlobal.DarkColors.length;
-            ds.setColor(FileUtils.parseColorName(PlotPanelGlobal.DarkColors[ncol]));
+            int ncol = (nserie)%Plot1DGlobal.DarkColors.length;
+            ds.setColor(FileUtils.parseColorName(Plot1DGlobal.DarkColors[ncol]));
         } 
     }
-}
+
+    @Override
+    public int getNPlottables() {
+        return series.size();
+    }
+
+    @Override
+    public int getNSelectedPlottables() {
+        return selectedSeries.size();
+    }
+    
+    @Override
+    public int getNplottablesOfSerieTypes(boolean onlyVisibles, SerieType...sts) {
+        int nserie = 0;
+        for (Plottable<BasicPoint> ds: series) {
+            //nomes visibles?
+            if ((onlyVisibles)&&(!ds.isPlotThis()))continue;
+            for (SerieType st1 :sts) {
+                if (ds.getSerieType()==st1) {
+                    nserie++;
+                    continue;
+                }
+            }
+        }
+        return nserie;
+    }
