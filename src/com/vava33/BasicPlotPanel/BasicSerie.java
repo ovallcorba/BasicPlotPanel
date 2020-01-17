@@ -15,21 +15,22 @@ import java.util.List;
 
 import org.apache.commons.math3.util.FastMath;
 
-import com.vava33.ovPlot.Plottable;
-import com.vava33.ovPlot.Plottable_point;
-import com.vava33.ovPlot.SerieType;
+import com.vava33.BasicPlotPanel.core.Plottable;
+import com.vava33.BasicPlotPanel.core.Plottable_point;
+import com.vava33.BasicPlotPanel.core.SerieType;
 
-public class BasicSerie implements Plottable {
+
+public class BasicSerie<T extends Plottable_point> implements Plottable<T>{
     
-    static float def_lineWidth = 1.0f;
-    static float def_markerSize = 0.0f;
-    static int def_hklticksize=12;
-    static int def_hklYOff=-16; //ho està a les opcions
+    public static float def_lineWidth = 1.2f;
+    public static float def_markerSize = 0.0f;
+    public static int def_hklticksize=12;
+    public static int def_hklYOff=-16; //ho està a les opcions
     
     private double tolEquals=0.001;
     private double tolContinuous=Double.MAX_VALUE; //si dist_entre_dos_punts>tolContinuous es considera NO continu per dibuixar linia
     
-    private List<Plottable_point> points;
+    private List<T> points;
     private String serieName;
     private boolean plotThis;
     private float lineWidth;
@@ -42,7 +43,7 @@ public class BasicSerie implements Plottable {
     private SerieType stype;
     private boolean continuous;
     private boolean showInLegend;
-    public boolean showErrBars;
+    private boolean showErrBars;
     
     //creates a XY serie
     public BasicSerie(String name) {
@@ -51,9 +52,8 @@ public class BasicSerie implements Plottable {
     
     //creates a SerieType serie
     public BasicSerie(String name, SerieType st) {
-            points = new ArrayList<Plottable_point>();
+            points = new ArrayList<T>();
             this.serieName = name;
-            this.setSerieType(st);
             this.plotThis=true;
             this.continuous=true;
             this.showInLegend=true;
@@ -62,15 +62,16 @@ public class BasicSerie implements Plottable {
             this.zOffset=0;
             this.scaleY=1.0;
             this.showErrBars=false;
+            this.setSerieType(st); //color, marker, line i scaleY/offset per hkl
     }
     
-    public BasicSerie(BasicSerie inds, SerieType tipusSerie, boolean copyIntensities) {
-        this(inds,new ArrayList<Plottable_point>());
+    public BasicSerie(BasicSerie<T> inds, SerieType tipusSerie, boolean copyIntensities) {
+        this(inds,new ArrayList<T>());
         this.setSerieType(tipusSerie);
         if (copyIntensities)this.copypoints(inds);
     }
     
-    public BasicSerie(BasicSerie inds, List<Plottable_point> punts) {
+    public BasicSerie(BasicSerie<T> inds, List<T> punts) {
         this(inds.serieName,inds.stype);
         this.points=punts;
         this.scaleY=inds.getScaleY();
@@ -83,13 +84,17 @@ public class BasicSerie implements Plottable {
     }
     
     //COPIEM (duplica)
-    public void copypoints(BasicSerie inDS) {
-        for (Plottable_point pp:inDS.points) {
-            this.points.add(pp.getCorrectedDataPoint(0, 0, 0, 1));
-        }
+    public void copypoints(Plottable<T> inDS) {
+        this.points=new ArrayList<T>(inDS.getPoints());
     }
 
-    public int getIndexOfDP(Plottable_point dp){
+    public void copyVisualParameters(BasicSerie<T> otherSerie) {
+        this.color=otherSerie.color;
+        this.lineWidth=otherSerie.lineWidth;
+        this.markerSize=otherSerie.markerSize;
+    }
+    
+    public int getIndexOfDP(T dp){
         return this.points.indexOf(dp);
     }
     
@@ -112,11 +117,11 @@ public class BasicSerie implements Plottable {
         this.points.clear();
     }
     
-    public void sortpoints() {
+    public void sortPoints() {
         Collections.sort(points);
     }
     
-    public void removePoint(Plottable_point dp){
+    public void removePoint(T dp){
         this.points.remove(dp);
     }
 
@@ -194,7 +199,7 @@ public class BasicSerie implements Plottable {
     //+-halftol
     public int[] getMaxMinIndicesDataPointsRange(double centralX, double halfrange) {
         double minval = centralX-halfrange;
-        Plottable_point p = this.getClosestPointX(minval, -1);
+        T p = this.getClosestPointX(minval, -1);
         int min = 0;
         if (p!=null) min = this.getIndexOfDP(p);
         double maxval = centralX+halfrange;
@@ -313,9 +318,9 @@ public class BasicSerie implements Plottable {
     @Override
     public void setSerieType(SerieType st) {
         this.stype = st;
-        this.color=SerieType.getDefColor(st);
-        this.lineWidth=SerieType.getDefLineWidth(st);
-        this.markerSize=SerieType.getDefMarkerSize(st);
+        this.color=getDefColor(st);
+        this.lineWidth=getDefLineWidth(st);
+        this.markerSize=getDefMarkerSize(st);
         if (st==SerieType.hkl) {
             this.setScaleY(def_hklticksize);
             this.setYOffset(def_hklYOff);
@@ -323,17 +328,18 @@ public class BasicSerie implements Plottable {
     }
 
     @Override
-    public List<Plottable_point> getPoints() {
+    public List<T> getPoints() {
         return points;
     }
 
     @Override
-    public void addPoint(Plottable_point pp) {
+    public void addPoint(T pp) {
+        pp.setPlottable(this);
         this.points.add(pp);
     }
 
     @Override
-    public Plottable_point getRawPoint(int index) {
+    public T getRawPoint(int index) {
         return points.get(index);
     }
 
@@ -457,10 +463,11 @@ public class BasicSerie implements Plottable {
     }
 
     @Override
-    public Plottable_point getClosestPointX(double xval, double tol) { //TODO probably it is slow...
-        Plottable_point found = null;
+    public T getClosestPointX(double xval, double tol) { //TODO probably it is slow...
+        T found = null;
+        if (tol<1)tol = 0.2;
         double mindist=tol;
-        for (Plottable_point pp:points) {
+        for (T pp:points) {
             double diff = FastMath.abs(pp.getX()-xval);
             if (diff<mindist){
                 found = pp;
@@ -547,7 +554,92 @@ public class BasicSerie implements Plottable {
     }
 
     @Override
-    public void setPoints(List<Plottable_point> punts) {
+    public void setPoints(List<T> punts) {
         this.points=punts;
     }
+
+    public static Color getDefColor(SerieType st) {
+        switch (st) {
+        case peaks:
+            return Color.GRAY;
+        case bkg:
+            return Color.PINK;
+        case bkgEstimP:
+            return Color.PINK;
+        case obs:
+            return Color.RED;
+        case cal:
+            return Color.BLACK;
+        case diff:
+            return Color.BLUE;
+        case hkl:
+            return Color.GREEN.darker();
+        case ref:
+            return Color.GRAY;
+        default:
+            return Color.BLACK;
+        }
+    }
+    
+    public static float getDefMarkerSize(SerieType st) {
+        switch (st) {
+        case peaks:
+            return 0;
+        case bkg:
+            return 0;
+        case bkgEstimP:
+            return def_markerSize+10;
+        case obs:
+            return 4;
+        case cal:
+            return 0;
+        case diff:
+            return 0;
+        case hkl:
+            return 0;
+        case ref:
+            return 0;
+        default:
+            return def_markerSize;
+        }
+    }
+
+    public static float getDefLineWidth(SerieType st) {
+        switch (st) {
+        case peaks:
+            return def_lineWidth+1f;
+        case bkg:
+            return def_lineWidth+1f;
+        case bkgEstimP:
+            return 0;
+        case obs:
+            return 0;
+        case diff:
+            return def_lineWidth-0.5f;
+        default: //INCLUDES DAT
+            return def_lineWidth;
+        }
+    }
+    
+    //Si s'ha de contar o no al fer repaints de color
+    public static boolean isPaintedType(SerieType st) {
+        switch (st) {
+        case dat:
+            return true;
+        case gr:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    public static List<SerieType> getPaintedTypes() {
+        List<SerieType> stpainted = new ArrayList<SerieType>();
+        for (SerieType st:SerieType.values()) {
+            if (isPaintedType(st))stpainted.add(st);
+        }
+        return stpainted;
+    }
+
+
 }

@@ -3,13 +3,27 @@ package com.vava33.BasicPlotPanel;
 /**
  * Basic Plotting project to be extended (it uses generic classes, e.g. dataToPlot)
  * 
+ *  COM FUNCIONA:
+ *  
+ *  - BasicDataToPlot<T> implementa dataToPlot, tot el tema de gestio de 
+ *    series (inclòs taula). Cal incialitzar-ho al principi i declarar-ho 
+ *    amb la classe de serie que voldrem plotejar.
+ *  - Podem utilitzar directament Plot1Dpanel (creant-ho amb constructor 
+ *    donant dataToPlot amb frontend=null) o implementar el frontend 
+ *    (o extendre el basic) -> mirar constructor
+ *  
+ *  --> Les series s'afegeixen i treuen amb dataToPlot, les opcions de 
+ *      visualització i interacció es fan amb el frontend.
+ *      Des del main (o qualsevol altre lloc) podem donar ordres a dataToPlot 
+ *      que s'actualitzaran automaticament al grafic i taula o el que sigui 
+ *      que utilitzem.
+ * 
  * @author Oriol Vallcorba
  * Licence: GPLv3
  * 
  */
 
 import javax.swing.JFrame;
-import com.vava33.ovPlot.BasicPlotPanel;
 import javax.swing.JSplitPane;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -42,7 +56,7 @@ public class BasicPlotMain {
 
     private static String LandF = "system";
     public static final String userDir = System.getProperty("user.dir");
-    public static final int build_date = 191121;
+    public static final int build_date = 200117;
     public static final String welcomeMSG = "Basic OVplot v"+build_date+" by OV\n";
     public static final String lineSeparator = System.getProperty("line.separator");
     public static String loglevel = "info";
@@ -52,8 +66,8 @@ public class BasicPlotMain {
     private static int def_Height=768;
     static VavaLogger log = BasicPlotMain.getVavaLogger("BasicPlotMain");
     
-    BasicPlotPanel plotpanel;
-    XYData dataToPlot;
+    BasicPlotPanelFrontEnd<BasicPlot1DPanel> plotpanel;
+    BasicDataToPlot<BasicSerie<BasicPoint>> dataToPlot;
     JFrame mainf;
     private JPanel panel;
     private JMenuBar menuBar;
@@ -123,12 +137,23 @@ public class BasicPlotMain {
 
 //CONSTRUCTOR
     public BasicPlotMain() {
-        dataToPlot = new XYData();
-        plotpanel = new BasicPlotPanel(new Options(), dataToPlot);
-        this.initGUI();
         
+        //IMPORTANT: CAL FER-HO AMB AQUEST ORDRE
+        //primer s'ha de crear el dataToPlot
+        dataToPlot = new BasicDataToPlot<BasicSerie<BasicPoint>>();
+        //segon el plotPanel
+//        BasicPlot1DPanel pp = new BasicPlot1DPanel(dataToPlot); //This sets de plotPanel to dataToPlot
+        //i tercer el frontend
+        plotpanel = new BasicPlotPanelFrontEnd<BasicPlot1DPanel>(new Options(), new BasicPlot1DPanel(dataToPlot,BasicPlotMain.getVavaLogger("BasicPlot1DPanel")),BasicPlotMain.getVavaLogger("BasicPlotMain_PlotPanel")); //The constructor BasicPlot1DPanel sets the plotPanel to dataToPlot
+        //i assignem coses:
+//        pp.setFrontEnd(plotpanel);
+//        dataToPlot.setPlotPanel(pp);
+        
+//        plotpanel = new BasicPlotPanelFrontEnd(new Options(), dataToPlot);
+//        plotpanel = new BasicPlotPanelFrontEnd<BasicPlot1DPanel>(new Options(), new BasicPlot1DPanel(dataToPlot,plotpanel));
+        this.initGUI();
         if (logTA)VavaLogger.setTArea(tAOut);
-        BasicPlotPanel.setVavaLogger(BasicPlotMain.getVavaLogger("BasicPlotMain_PlotPanel"));
+        
         log.info(welcomeMSG);
     }
     
@@ -201,6 +226,7 @@ public class BasicPlotMain {
     
     private void do_mainf_windowClosing(WindowEvent e) {
         this.disposeMainFrame();
+        System.exit(0);
     }
     
     public void disposeMainFrame(){
@@ -209,9 +235,8 @@ public class BasicPlotMain {
 
     private void do_mntmOpen_actionPerformed(ActionEvent e) {
         File f = FileUtils.fchooserOpen(this.mainf, new File(userDir), null, 0);
-        BasicSerie bds = DataFileUtils.readDAT(f);
+        BasicSerie<BasicPoint> bds = DataFileUtils.readDAT(f);
         dataToPlot.addSerie(bds);
         
     }
-
 }

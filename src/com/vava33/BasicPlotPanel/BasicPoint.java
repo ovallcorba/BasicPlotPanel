@@ -10,8 +10,8 @@ package com.vava33.BasicPlotPanel;
 
 import org.apache.commons.math3.util.FastMath;
 
-import com.vava33.ovPlot.Plottable;
-import com.vava33.ovPlot.Plottable_point;
+import com.vava33.BasicPlotPanel.core.Plottable;
+import com.vava33.BasicPlotPanel.core.Plottable_point;
 
 public class BasicPoint implements Plottable_point{
     private double xvalue;
@@ -20,21 +20,21 @@ public class BasicPoint implements Plottable_point{
     private double zvalue;
     private double sdyvalue;
     private String label;
-    private Plottable parent;
+    private Plottable<? extends Plottable_point> parent;
     
-    public BasicPoint(double x, double y, Plottable parent) {
+    public BasicPoint(double x, double y, Plottable<? extends Plottable_point> parent) {
         this(x,y,0,0,parent);
     }
     
-    public BasicPoint(double x, double y, double z, double sdy, Plottable parent) {
+    public BasicPoint(double x, double y, double z, double sdy, Plottable<? extends Plottable_point> parent) {
         this(x,y,z,sdy,"",parent);
     }
     
-    public BasicPoint(double x, double y, double z, double sdy, String label, Plottable parent) {
+    public BasicPoint(double x, double y, double z, double sdy, String label, Plottable<? extends Plottable_point> parent) {
         this(x,y,0,z,sdy,label,parent);
     }
     
-    public BasicPoint(double x, double y, double ybkg, double z, double sdy, String label, Plottable parent) {
+    public BasicPoint(double x, double y, double ybkg, double z, double sdy, String label, Plottable<? extends Plottable_point> parent) {
         this.xvalue=x;
         this.yvalue=y;
         this.ybkgvalue=ybkg;
@@ -159,6 +159,14 @@ public class BasicPoint implements Plottable_point{
     }
 
     /* (non-Javadoc)
+     * @see com.vava33.ovPlot.Plottable_point#getParent()
+     */
+    @Override
+    public Plottable<? extends Plottable_point> getPlottable() {
+        return parent;
+    }
+
+    /* (non-Javadoc)
      * @see com.vava33.ovPlot.Plottable_point#getScaledInY(float)
      */
     @Override
@@ -166,14 +174,7 @@ public class BasicPoint implements Plottable_point{
         return this.getCorrectedDataPoint(0, 0, 0, factor);
     }
 
-    /* (non-Javadoc)
-     * @see com.vava33.ovPlot.Plottable_point#getParent()
-     */
-    @Override
-    public Plottable getPlottable() {
-        return parent;
-    }
-
+    
     /* (non-Javadoc)
      * @see com.vava33.ovPlot.Plottable_point#getCorrectedDataPoint(double, double, double)
      */
@@ -183,8 +184,7 @@ public class BasicPoint implements Plottable_point{
     }
 
     @Override
-    public Plottable_point getCorrectedDataPoint(double incX, double incY, double incZ, double factorY,
-            boolean addYBkg) {
+    public Plottable_point getCorrectedDataPoint(double incX, double incY, double incZ, double factorY, boolean addYBkg) {
         Plottable_point p =  new BasicPoint(this);
         p.setX(this.getX()+incX);
         if (addYBkg) {
@@ -224,4 +224,12 @@ public class BasicPoint implements Plottable_point{
         this.ybkgvalue=ybkg;
         
     }
+
+    @Override
+    public void setPlottable(Plottable<? extends Plottable_point> p) {
+        this.parent=p;
+    }
+
+
+
 }
