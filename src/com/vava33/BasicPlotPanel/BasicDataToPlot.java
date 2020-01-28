@@ -350,7 +350,7 @@ public class BasicDataToPlot<T extends BasicSerie<BasicPoint>> implements DataTo
 
     private void editMultipleSeriesTable(ActionEvent e) {
         if (selectedSeries.size()>0) {
-            BatchEditDialog<T> be = new BatchEditDialog<T>(selectedSeries);
+            BatchEditDialog<T> be = new BatchEditDialog<T>(selectedSeries,log);
             be.setModal(true);
             be.setVisible(true);         
             

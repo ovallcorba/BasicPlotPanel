@@ -15,6 +15,7 @@ package com.vava33.BasicPlotPanel.core;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -38,8 +39,17 @@ import com.vava33.jutils.VavaLogger;
 public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
 
     private static final long serialVersionUID = 1L;
-    private static VavaLogger log;
+    
+    private static final int minWidth = 300;
+    private static final int minHeight = 300;
+    
+    private VavaLogger log;
+  
     private int panelW, panelH;
+    private boolean customCanvasSize = false;
+    private int customCanvasWidth = 0;
+    private int customCanvasHeight = 0;
+    
     private boolean saveTransp = false;
 
     private DecimalFormat def_xaxis_format = FileUtils.dfX_3;
@@ -150,11 +160,11 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
         div_startValX = 0;
         div_startValY = 0;
     }
-    
+
     public void setFrontEnd(Plot1DFrontend fend) {
         this.frontend=fend;
     }
-
+    
 /////METODES PREPARACIO PLOT -- CONVERSIO DADES/PANTALLA(frame)
     
     public T getDataToPlot() {
@@ -596,7 +606,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
 
         if(applyScaleFactorT2) {
             BasicStroke stroke = new BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_BEVEL, 0, new float[]{2,4}, 0);
-            drawVerticalLine(g2, getFrameXFromDataPointX(scaleFactorT2ang), 100, 0,"x"+FileUtils.dfX_1.format(scaleFactorT2fact), Color.GRAY, stroke);
+            drawVerticalLine(g2, getFrameXFromDataPointX(scaleFactorT2ang), 100, 0,"x"+FileUtils.dfX_1.format(scaleFactorT2fact), Color.GRAY, stroke,true); //always label
         }
 
         this.customPaintAfterData(g2); //TO OVERRIDE AND ADD WHATEVER WE WANT
@@ -1107,7 +1117,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
     }
 
     //draw vertical lines --> atencio posa el label del punt!
-    protected void drawREF(Graphics2D g1, Plottable<? extends Plottable_point> serie, Color col){
+    protected void drawREF(Graphics2D g1, Plottable<? extends Plottable_point> serie, Color col, boolean drawLabels){
         for (int i = 0; i < serie.getNPoints(); i++){
 
             BasicStroke stroke = new BasicStroke(serie.getLineWidth());
@@ -1143,7 +1153,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
 
             if(splitDBCompound) {
                 //fem una altra linia vertical des de sota de tot d'uns 10 pixels
-                drawVerticalLine(g1,fx,-10,10*nrefseries,"",col,new BasicStroke(serie.getLineWidth()));
+                drawVerticalLine(g1,fx,-10,10*nrefseries,"",col,new BasicStroke(serie.getLineWidth()),drawLabels);
             }
         }
     }
@@ -1153,7 +1163,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
     //percentage of vertical space occupied (from bottom to top)
     //Sep2019 afegit Yofset de la serie
     // if percent<0 it will be considered number of pixels from bottom
-    private void drawVerticalLine(Graphics2D g1, double frameX, double percent, int yOffset, String label, Color col, BasicStroke stroke) {
+    private void drawVerticalLine(Graphics2D g1, double frameX, double percent, int yOffset, String label, Color col, BasicStroke stroke, boolean drawLabel) {
         if (!isFramePointInsideXGraphArea(frameX)) return;
         if (percent==0)return;
         g1.setColor(col);
@@ -1171,7 +1181,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
         g1.draw(new Line2D.Double(ptop.x,ptop.y,pbot.x,pbot.y));
 
         //ara el label
-        if (this.isHkllabels()) {
+        if (drawLabel) {
             if (!label.isEmpty()) {
                 //escribim al costat de la linia
                 Font font = g1.getFont();
@@ -1736,6 +1746,44 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
         this.hkllabels = hkllabels;
     }
     
+    public boolean isCustomCanvasSize() {
+        return customCanvasSize;
+    }
+
+    public void setCustomCanvasSize(boolean customCanvasSize) {
+        this.customCanvasSize = customCanvasSize;
+    }
+
+    public int getCustomCanvasWidth() {
+        return customCanvasWidth;
+    }
+
+    public void setCustomCanvasWidth(int customCanvasWidth) {
+        this.customCanvasWidth = customCanvasWidth;
+    }
+
+    public int getCustomCanvasHeight() {
+        return customCanvasHeight;
+    }
+
+    public void setCustomCanvasHeight(int customCanvasHeight) {
+        this.customCanvasHeight = customCanvasHeight;
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        if (isCustomCanvasSize()) {
+            return new Dimension(this.getCustomCanvasWidth(),this.getCustomCanvasHeight());
+        }else {
+            return super.getPreferredSize();    
+        }
+    }
+    
+    @Override
+    public Dimension getMinimumSize() {
+        return new Dimension(minWidth,minHeight);
+        
+    }
 }
 
 

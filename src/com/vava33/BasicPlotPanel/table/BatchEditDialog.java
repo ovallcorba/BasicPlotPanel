@@ -17,7 +17,6 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import com.vava33.BasicPlotPanel.BasicPlotPanelFrontEnd;
 import com.vava33.BasicPlotPanel.BasicPoint;
 import com.vava33.BasicPlotPanel.BasicSerie;
 import com.vava33.BasicPlotPanel.core.Plottable;
@@ -39,7 +38,7 @@ public class BatchEditDialog<T extends BasicSerie<BasicPoint>> extends JDialog {
 
     private static final long serialVersionUID = 1L;
     private final JPanel contentPanel = new JPanel();
-    VavaLogger log = BasicPlotPanelFrontEnd.getLog();
+    VavaLogger log;
     List<T> seriesToEdit;  //POSO PLOTTABLE PER FER-HO GENERAL I PODER EDITAR SUBCLASSES DE BASICSERIE... pero si es vol editar ALTRES valors de les taules cal fer-ho especific
     private JTextField txtMarker;
     private JTextField txtLine;
@@ -58,9 +57,10 @@ public class BatchEditDialog<T extends BasicSerie<BasicPoint>> extends JDialog {
     private JTextField txtYoff;
     private JCheckBox chckbxApplyToAllYoff;
 
-
-    public BatchEditDialog(List<T> plts) {
+    
+    public BatchEditDialog(List<T> plts, VavaLogger log) {
         setTitle("Edit serie(s)");
+        this.log=log;
         this.seriesToEdit=plts;
         setBounds(100, 100, 450, 300);
         getContentPane().setLayout(new BorderLayout());

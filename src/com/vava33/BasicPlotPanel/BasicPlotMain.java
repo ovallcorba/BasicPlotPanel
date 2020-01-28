@@ -159,6 +159,7 @@ public class BasicPlotMain {
     
     private void initGUI() {
         mainf = new JFrame();
+        mainf.setTitle("OV BasicPlot");
         mainf.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
