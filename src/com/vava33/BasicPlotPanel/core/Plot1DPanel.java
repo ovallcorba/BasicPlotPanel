@@ -44,7 +44,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
     private static final int minHeight = 300;
     
     private VavaLogger log;
-  
+    
     private int panelW, panelH;
     private boolean customCanvasSize = false;
     private int customCanvasWidth = 0;
@@ -585,7 +585,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
             if (p.isEmpty())continue;
             switch(p.getSerieType()) { //el default ho fa tot, he tret l'especific per xy
             case ref:
-                drawREF(g2,p,p.getColor());
+                drawREF(g2,p,p.getColor(),this.isHkllabels());
                 nrefseries++;
                 break;
             case hkl:
@@ -1149,7 +1149,7 @@ public abstract class Plot1DPanel<T extends DataToPlot<?>> extends JPanel {
             //check if yoff
             int yOffPix=(int) serie.getYOffset();
 
-            drawVerticalLine(g1,fx,inten,yOffPix,pp.getLabel(),col,stroke);
+            drawVerticalLine(g1,fx,inten,yOffPix,pp.getLabel(),col,stroke,drawLabels);
 
             if(splitDBCompound) {
                 //fem una altra linia vertical des de sota de tot d'uns 10 pixels
