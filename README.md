@@ -1,6 +1,6 @@
 # BasicPlotPanel
 
-BasicPlotPanel is a plotting library that uses java jPanels and with the primary focus to X-ray powder diffraction data although it is meant to be generic enough for any application. It started as [d1Dplot](https://github.com/ovallcorba/D1Dplot) and moved as an independent library at some point of the development. The library has also been used in non-powder diffraction plots, such as a [DCM glitch calculator](https://github.com/ovallcorba/DCM_Glitch_calculator).
+BasicPlotPanel is a plotting library that uses java jPanels and with the primary focus to X-ray powder diffraction data although it is meant to be generic enough for any application. It started as [d1Dplot](https://github.com/ovallcorba/d1Dplot) and moved as an independent library at some point of the development. The library has also been used in non-powder diffraction plots, such as a [DCM glitch calculator](https://github.com/ovallcorba/DCM_Glitches_calculator).
 
 This was a personal closed source project started on 2015 and actively maintained until 2020. From August 2022 the program is open source and licensed under the GPL-3.0 license. Sorry if the code is not following best practices, is a little bit messy and for the comments in catalan.
 
@@ -22,7 +22,7 @@ The program also uses the following libraries from the same author (packages com
 
 ### Usage
 
-Clone the project or use the jar file in releases () and then import from other projects 
+Clone the project or use the jar file in releases (https://github.com/ovallcorba/BasicPlotPanel/releases) and then import from other projects 
 
 ## Authors
 
